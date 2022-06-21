@@ -1,12 +1,48 @@
-#include <string>
-#include <vector>
-#include <map>
-#include <assert.h>
-#include <algorithm>
-#include <bitset>
+#include <bits/stdc++.h>
 
-size_t findBiggestCommonChild(std::string& one, std::string&two)
+using namespace std;
+
+/*
+ * Complete the 'commonChild' function below.
+ *
+ * The function is expected to return an INTEGER.
+ * The function accepts following parameters:
+ *  1. STRING s1
+ *  2. STRING s2
+ */
+ 
+ bool getBiggestSubStringOrBust(int pos1, int pos2, int del1, int del2, int delMax, int n, const std::string& one, const std::string& two)
 {
+    if (pos1 == n && pos2 == n)
+    {
+        return true;
+    }
+
+    if (one[pos1] == two[pos2])
+    {
+        return getBiggestSubStringOrBust(++pos1, ++pos2, del1, del2, delMax, n, one, two);
+    }
+    else {
+        if (del1 >= delMax && del2 >= delMax)
+        {
+            return false;
+        }
+        if (del1 >= delMax)
+        {
+            return getBiggestSubStringOrBust( pos1, ++pos2, del1, ++del2, delMax, n, one, two);
+        }
+        if (del2 >= delMax)
+        {
+            return getBiggestSubStringOrBust(++pos1, pos2, ++del1, del2, delMax, n, one, two);
+        }
+        
+        return getBiggestSubStringOrBust(pos1, ++pos2, del1, ++del2, delMax, n, one, two) || getBiggestSubStringOrBust(++pos1, pos2, ++del1, del2, delMax, n, one, two);
+    }
+}
+
+int commonChild(string one, string two)
+{
+    //timeout on some tests but finishes succesfully on rest
     size_t n = one.size();
     size_t biggestChild = n;
     assert(one.size() == two.size());
@@ -14,35 +50,6 @@ size_t findBiggestCommonChild(std::string& one, std::string&two)
     {
         return biggestChild;
     }
-
-    auto getBiggestSubStringOrBust = [&](auto&& getBiggestSubStringOrBust, int pos1, int pos2, int del1, int del2, int delMax)
-    {
-        if (pos1 == n && pos2 == n)
-        {
-            return true;
-        }
-
-        if (one[pos1] == two[pos2])
-        {
-            return getBiggestSubStringOrBust(getBiggestSubStringOrBust, ++pos1, ++pos2, del1, del2, delMax);
-        }
-        else {
-            if (del1 >= delMax && del2 >= delMax)
-            {
-                return false;
-            }
-            if (del1 >= delMax)
-            {
-                return getBiggestSubStringOrBust(getBiggestSubStringOrBust, pos1, ++pos2, del1, ++del2, delMax);
-            }
-            if (del2 >= delMax)
-            {
-                return getBiggestSubStringOrBust(getBiggestSubStringOrBust, ++pos1, pos2, ++del1, del2, delMax);
-            }
-            return getBiggestSubStringOrBust(getBiggestSubStringOrBust, pos1, ++pos2, del1, ++del2, delMax) || getBiggestSubStringOrBust(getBiggestSubStringOrBust, ++pos1, pos2, ++del1, del2, delMax);
-        }
-    };
-
 
     for(int numberOfAllowedDeletions = 0; numberOfAllowedDeletions < n; ++numberOfAllowedDeletions)
     {
@@ -59,7 +66,7 @@ size_t findBiggestCommonChild(std::string& one, std::string&two)
                 if (one[startPositionOne] == two[startPositionTwo])
                 {
                     //look ahead with the alloted deletions
-                    if (getBiggestSubStringOrBust(getBiggestSubStringOrBust, startPositionOne, startPositionTwo, numberOfDeletions1, numberOfDeletions2, numberOfAllowedDeletions))
+                    if (getBiggestSubStringOrBust(startPositionOne, startPositionTwo, numberOfDeletions1, numberOfDeletions2, numberOfAllowedDeletions, n, one, two))
                     {
                         return biggestChild - numberOfAllowedDeletions;
                     }
@@ -79,45 +86,24 @@ size_t findBiggestCommonChild(std::string& one, std::string&two)
             }
         }
     }
-    /*
-    auto& testStrings = [&](const std::vector<bool>& ignorePositions1, const std::vector<bool>& ignorePositions2)
-    {
-        for (int i = 0, j = 0; i < n || j < n;)
-        {
-            if (!ignorePositions1[i])
-            {
-                i++;
-                continue;
-            }
-            if (!ignorePositions2[i])
-            {
-                j++;
-                continue;
-            }
-            if (one[i] != two[j])
-            {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    while (biggestChild > 0)
-    {
-        int positionsToIgnore = n - biggestChild;
-        const std::vector<bool> ignorePositions1(n, false);
-        const std::vector<bool> ignorePositions2(n, false);
-
-        --biggestChild;
-    }*/
+    return 0;
 }
-
-
 
 int main()
 {
-    std::string one = "ADDCDDCDD";
-    std::string two = "ZQEADDCDD";
+    ofstream fout(getenv("OUTPUT_PATH"));
 
-    findBiggestCommonChild(one, two);
+    string s1;
+    getline(cin, s1);
+
+    string s2;
+    getline(cin, s2);
+
+    int result = commonChild(s1, s2);
+
+    fout << result << "\n";
+
+    fout.close();
+
+    return 0;
 }
