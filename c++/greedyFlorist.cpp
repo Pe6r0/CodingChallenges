@@ -1,6 +1,10 @@
 #include <memory>
-#include <bits/stdc++.h>
+//#include <bits/stdc++.h>
 #include <list>
+#include <memory>
+#include <vector>
+#include <iostream>
+#include <algorithm>
 
 using namespace std;
 
@@ -27,40 +31,47 @@ int costFlowerFunction(int numberOfSalesForThatCustomer, int price)
 
 int getMinimumCost(int k, std::vector<int> c) //number of friends and each flower's original price
 {
-    const auto generateBranch = [&](State& state)->State* 
+    const auto generateBranch = [&](State& state)->State*
     {
         int flowerI = state._flower;
-        if(flowerI < state._currentAvailability.size())
+        int friendI = state._party;
+
+        if (flowerI == c.size())
+        {
+            state._flower = -1;
+            return nullptr;
+        }
+        if (friendI == k)
         {
             state._flower += 1;
-            auto flowerOriginalcost = state._currentAvailability[flowerI];
-            if (flowerOriginalcost == -1)
-                return nullptr;
-            int friendI = state._party;
-            if(friendI < state._partyPurchaseHistory.size())
-            {
-                state._party += 1;
-                auto candidate = unique_ptr<State>(new State());
-
-                candidate->_parent = &state;
-                candidate->_currentAvailability = state._currentAvailability;
-                candidate->_partyPurchaseHistory = state._partyPurchaseHistory;
-                candidate->cost = state.cost;
-                candidate->depth = state.depth;
-                //purchase of flower by partyMember
-                auto numberOfFlowersBoughtByPartyMember = state._partyPurchaseHistory[friendI];
-                int price = costFlowerFunction(numberOfFlowersBoughtByPartyMember, flowerOriginalcost);
-                candidate->_currentAvailability[flowerI] = -1;
-                candidate->_partyPurchaseHistory[friendI] += 1;
-                candidate->cost += price;
-                candidate->depth += 1;
-
-                state._children.push_back(std::move(candidate));
-                
-                return candidate.get();
-            }
+            state._party = 0;
+            return nullptr;
         }
-        return nullptr;
+        state._party += 1;
+
+        auto flowerOriginalcost = state._currentAvailability[flowerI];
+        if (flowerOriginalcost == -1)
+            return nullptr;
+
+        auto candidate = unique_ptr<State>(new State());
+
+        candidate->_parent = &state;
+        candidate->_currentAvailability = state._currentAvailability;
+        candidate->_partyPurchaseHistory = state._partyPurchaseHistory;
+        candidate->cost = state.cost;
+        candidate->depth = state.depth;
+        //purchase of flower by partyMember
+        auto numberOfFlowersBoughtByPartyMember = state._partyPurchaseHistory[friendI];
+        int price = costFlowerFunction(numberOfFlowersBoughtByPartyMember, flowerOriginalcost);
+        candidate->_currentAvailability[flowerI] = -1;
+        candidate->_partyPurchaseHistory[friendI] += 1;
+        candidate->cost += price;
+        candidate->depth += 1;
+                
+
+        state._children.push_back(std::move(candidate));
+
+        return state._children.back().get();
     };
 
     //generate branches? keep picking the lowest cost from the entire tree.
@@ -74,30 +85,48 @@ int getMinimumCost(int k, std::vector<int> c) //number of friends and each flowe
     std::vector<int> emptycondition(c.size(), -1);
 
     std::list<State*> expandOptions;
-    
+
     expandOptions.push_back(rootNode.get());
 
     while (expandOptions.front()->_currentAvailability != emptycondition)
     {
         auto expand = expandOptions.front();
+        std::cout << "checking";
+        int pu = 0;
+        for (auto f : expand->_partyPurchaseHistory)
+        {
+            pu += f;
+            std::cout << " " << f;
+        }
+        std::cout << " " << pu << std::endl;
+
         auto state = generateBranch(*expand);
-        if(!state)
+        if (expand->_flower == -1)
         {
             expandOptions.remove(expand);
+            continue;
+        }
+        if (state == nullptr)
+        {
+            continue;
+        }
+        if (state->_currentAvailability == emptycondition)
+        {
+            return state->cost;
         }
         for (auto& state : expand->_children)
         {
             bool insert = false;
-            for(auto stateIn = expandOptions.begin(); stateIn != expandOptions.end(); ++stateIn)
+            for (auto stateIn = expandOptions.begin(); stateIn != expandOptions.end(); ++stateIn)
             {
-                if((*stateIn)->cost > state->cost)
+                if ((*stateIn)->cost > state->cost)
                 {
                     expandOptions.insert(stateIn, state.get());
                     insert = true;
                     break;
-                }                
+                }
             }
-            if(!insert)
+            if (!insert)
             {
                 expandOptions.push_back(state.get());
             }
@@ -109,64 +138,11 @@ int getMinimumCost(int k, std::vector<int> c) //number of friends and each flowe
 
 int main()
 {
-    ofstream fout(getenv("OUTPUT_PATH"));
+    int friends = 3;
+    std::vector<int> prices = { 1,3,5,7,9 };
+    int minimumCost = getMinimumCost(friends, prices);
 
-    string nk_temp;
-    getline(cin, nk_temp);
-
-    vector<string> nk = split_string(nk_temp);
-
-    int n = stoi(nk[0]);
-
-    int k = stoi(nk[1]);
-
-    string c_temp_temp;
-    getline(cin, c_temp_temp);
-
-    vector<string> c_temp = split_string(c_temp_temp);
-
-    vector<int> c(n);
-
-    for (int i = 0; i < n; i++) {
-        int c_item = stoi(c_temp[i]);
-
-        c[i] = c_item;
-    }
-
-    int minimumCost = getMinimumCost(k, c);
-
-    fout << minimumCost << "\n";
-
-    fout.close();
+    cout << minimumCost << "\n";
 
     return 0;
-}
-
-vector<string> split_string(string input_string) {
-    string::iterator new_end = unique(input_string.begin(), input_string.end(), [] (const char &x, const char &y) {
-        return x == y and x == ' ';
-    });
-
-    input_string.erase(new_end, input_string.end());
-
-    while (input_string[input_string.length() - 1] == ' ') {
-        input_string.pop_back();
-    }
-
-    vector<string> splits;
-    char delimiter = ' ';
-
-    size_t i = 0;
-    size_t pos = input_string.find(delimiter);
-
-    while (pos != string::npos) {
-        splits.push_back(input_string.substr(i, pos - i));
-
-        i = pos + 1;
-        pos = input_string.find(delimiter, i);
-    }
-
-    splits.push_back(input_string.substr(i, min(pos, input_string.length()) - i + 1));
-
-    return splits;
 }
