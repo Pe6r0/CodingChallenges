@@ -23,7 +23,7 @@ std::string& capitalise(string& a, char b) //copy before
     return a;
 }
 
-//failing a few test cases, no simple one to debug atm
+//timeout on a few cases
 
 string abbreviation(string a, string b) 
 {
